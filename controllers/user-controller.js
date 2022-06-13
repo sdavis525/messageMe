@@ -67,32 +67,46 @@ const userController = {
             .catch(err => res.status(400).json(err));
     },
 
- 
-    addFriend({ params }, res) {
-        User.findOneAndUpdate({ _id: params.id }, { $addToSet: { friends: params.friendId } }, { runValidators: true })
-            .then(dbUserData => {
-                if (!dbUserData) {
-                    res.status(404).json({ message: 'No user found with this id!' });
-                    return;
-                }
-                res.json(dbUserData);
-            })
-            .catch(err => res.status(400).json(err));
-    },
+// Add an assignment to a student
+addFriend(req, res) {
+    console.log('You are adding a friend');
+    console.log(req.params);
+    User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $push: { friends: req.params.friendId } },
+      { runValidators: true, new: true }
+    )
+      .populate({
+        path: 'friends',
+        select: '-__v',
+      })
+      .select('-__v')
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user found with that ID :(' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  // Remove assignment from a student
+  removeFriend(req, res) {
+    User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $pull: { friends: req.params.friendId } },
+      { runValidators: true, new: true }
+    )
+      .populate({
+        path: 'friends',
+        select: '-__v',
+      })
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user found with that ID :(' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+};
 
-  
-    removeFriend({ params }, res) {
-        User.findOneAndUpdate({ _id: params.id }, { $pull: { friends: params.friendId } }, { runValidators: true })
-            .then(dbUserData => {
-                if (!dbUserData) {
-                    res.status(404).json({ message: 'No user found with this id!' });
-                    return;
-                }
-                res.json(dbUserData);
-            })
-            .catch(err => res.status(400).json(err));
-    },
-
-}
 
 module.exports = userController;
